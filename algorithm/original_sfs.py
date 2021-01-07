@@ -38,9 +38,10 @@ class StochasticFractalSearch():
     *************************************************************************
     """
 
-    def __init__(self, lower, upper, maximum_diffusion, population_size, walk, fitness_callback, max_generation, demo_3d=False, plot_step=.5, refresh_inter=.01, iter_callback=None):
+    def __init__(self, lower, upper, maximum_diffusion, population_size, walk, fitness_callback, max_generation, bound_clipping=True, demo_3d=False, plot_step=.5, refresh_inter=.01, iter_callback=None):
         """
         a class for SFS algorithm
+        :param bound_clipping: true to clip out of bound values | false to use random values as in the original algorithm on matlab
         :param iter_callback: the function to be called in every optimization iteration (should receive generation number,)
         :param lower: a numpy vector for the lower bound of size (dim,), the problem dimension is set from this
         :param upper: a numpy vector for the upper bound of size (dim,), can't be less then lower in any entry
@@ -79,12 +80,13 @@ class StochasticFractalSearch():
         self.dim = lower.shape[0]  # problem dimension
         self.maximum_diffusion = maximum_diffusion
         # Creating random points in considered search space
-        self.population = np.tile(lower, reps=(population_size, 1)) + rand(population_size, self.dim) * np.tile(upper, reps=(population_size, 1))
+        self.population = np.tile(lower, reps=(population_size, 1)) + rand(population_size, self.dim) * np.tile(upper-lower, reps=(population_size, 1))
         self.population_size = population_size
         self.fitness_callback = fitness_callback
         self.generation = 1
         self.max_generation = max_generation
         self.walk = walk
+        self.bound_clipping = bound_clipping
         ##############################################################
         # initializing the best point
         # Calculating the fitness of first created points
@@ -178,17 +180,18 @@ class StochasticFractalSearch():
         if single_point:
             points = np.expand_dims(points, 0)
 
-        # # RANDOM OUT OF BOUND
-        # bad_point_points = np.argwhere(np.logical_or(points < self.lower, points > self.upper))  # below_lower+above_upper
-        # for bad_point in bad_point_points:
-        #     candidate, component_j = bad_point
-        #     points[candidate, component_j] = self.lower[component_j] + np.random.rand() * (self.upper[component_j] - self.lower[component_j])
-
-        # clipped OUT OF BOUND
-        bad_point_points = np.argwhere(np.logical_or(points < self.lower, points > self.upper))  # below_lower+above_upper
-        for bad_point in bad_point_points:
-            candidate, component_j = bad_point
-            points[candidate, component_j] = min(max(points[candidate, component_j], self.lower[component_j]), self.upper[component_j])
+        if not self.bound_clipping:
+            # # RANDOM OUT OF BOUND
+            bad_point_points = np.argwhere(np.logical_or(points < self.lower, points > self.upper))  # below_lower+above_upper
+            for bad_point in bad_point_points:
+                candidate, component_j = bad_point
+                points[candidate, component_j] = self.lower[component_j] + np.random.rand() * (self.upper[component_j] - self.lower[component_j])
+        else:
+            # clipped OUT OF BOUND
+            bad_point_points = np.argwhere(np.logical_or(points < self.lower, points > self.upper))  # below_lower+above_upper
+            for bad_point in bad_point_points:
+                candidate, component_j = bad_point
+                points[candidate, component_j] = min(max(points[candidate, component_j], self.lower[component_j]), self.upper[component_j])
 
         if single_point:
             points = points[0, :]
@@ -290,83 +293,81 @@ class StochasticFractalSearch():
         """
         # starting the Optimizer
         for _ in range(self.max_generation):
-            ################################################################################################
-            # 1.a) diffusion process  >> exploitation
-            ################################################################################################
-            population_diffusion, fitness_diffusion = self.diffusion_step()
-            population_diffusion_sorted, fitness_diffusion_sorted = self.simultaneous_fitness_sort(population_diffusion, fitness_diffusion)
-            # clean up and make sure they aren't used again (might be a source for confusion)
-            del population_diffusion, fitness_diffusion
-            ################################################################################################
-            # 1.b) update the best point and fitness
-            ################################################################################################
-            self.update_best(population_diffusion_sorted, fitness_diffusion_sorted)
-            ################################################################################################
-            # 1.c) ranking after diffusion process
-            ################################################################################################
-            # for simplicity the population will be sorted, so the probabilities are a linear function with sorted output (line:54 in matlab script)
-            pa_sorted = [(self.population_size - i) / self.population_size for i in range(self.population_size)]  # probabilities for points, ranking eqn(15)
-            ################################################################################################
-            ################################################################################################
-            ################################################################################################
-            ################################################################################################
-            # 2) update 1 : updating the best points obtained by diffusion process  >> exploration
-            ################################################################################################
-            self.population = population_diffusion_sorted
-            population_update1, fitness_update1 = self.update_1_step(pa_sorted)  # population is sorted
-
-            # keep the best of both the updated and diffused (merging points form 2 populations)
-            fitness_merged = []
-            for idx, (diff_point, update1_point) in enumerate(zip(population_diffusion_sorted, population_update1)):
-                if fitness_update1[idx] < fitness_diffusion_sorted[idx]:  # update_1 point is better than diffusion
-                    self.population[idx] = update1_point
-                    fitness_merged.append(fitness_update1[idx])
-                else:
-                    self.population[idx] = diff_point  # diffusion point is better than update_1
-                    fitness_merged.append(fitness_diffusion_sorted[idx])
-            fitness_merged = np.array(fitness_merged)
-            self.population, fitness_merged = self.simultaneous_fitness_sort(self.population, fitness_merged)
-            ################################################################################################
-            # 2.b)  update the best point and fitness
-            ################################################################################################
-            self.update_best(self.population, fitness_merged)
-            ################################################################################################
-            ## 2.c) ranking after update1 process
-            ################################################################################################
-            # probabilities for points, ranking eqn(15)
-            # pa_sorted = same as before update 1
-            ################################################################################################
-            ################################################################################################
-            ################################################################################################
-            ################################################################################################
-            # 3) update 2 : updating the best points obtained by diffusion process  >> exploration
-            ################################################################################################
-            self.population, fitness_update2 = self.update_2_step(pa_sorted)
-            self.population, fitness_update2 = self.simultaneous_fitness_sort(self.population, fitness_update2)
-
-            self.fitness_ax.plot([self.generation - 1, self.generation], [self.last_draw, self.best_fit])
-
-            ################################################################################################
-            ################################################################################################
-            ################################################################################################
-            ################################################################################################
-            # 4) drawing stuff
-            self.last_draw = self.best_fit  # used to connect lines
-            plt_to_img(self.fitness_fig)
-
-            if self.draw_3d:
-                # for 3d drawing for dim = 2 problems
-                draw_3d_imgs = self.demo_3d(self.population, fitness_update2)
-                for img in draw_3d_imgs:
-                    cv2.imwrite(os.path.join(PATH_IMGS_3D, "anim-{}.png".format(self.anim_index)), img)
-                    self.anim_index += 1
-
-            self.generation += 1
-            plt.pause(self.refresh_inter)
-            if self.iter_callback is not None:
-                self.iter_callback(self.best_point, self.best_fit, self.generation)
+            self.iterate()
         # clean up
         plt.close('all')
+
+    def iterate(self):
+        ################################################################################################
+        # 1.a) diffusion process  >> exploitation
+        ################################################################################################
+        population_diffusion, fitness_diffusion = self.diffusion_step()
+        population_diffusion_sorted, fitness_diffusion_sorted = self.simultaneous_fitness_sort(population_diffusion, fitness_diffusion)
+        # clean up and make sure they aren't used again (might be a source for confusion)
+        del population_diffusion, fitness_diffusion
+        ################################################################################################
+        # 1.b) update the best point and fitness
+        ################################################################################################
+        self.update_best(population_diffusion_sorted, fitness_diffusion_sorted)
+        ################################################################################################
+        # 1.c) ranking after diffusion process
+        ################################################################################################
+        # for simplicity the population will be sorted, so the probabilities are a linear function with sorted output (line:54 in matlab script)
+        pa_sorted = [(self.population_size - i) / self.population_size for i in range(self.population_size)]  # probabilities for points, ranking eqn(15)
+        ################################################################################################
+        ################################################################################################
+        ################################################################################################
+        ################################################################################################
+        # 2) update 1 : updating the best points obtained by diffusion process  >> exploration
+        ################################################################################################
+        self.population = population_diffusion_sorted
+        population_update1, fitness_update1 = self.update_1_step(pa_sorted)  # population is sorted
+        # keep the best of both the updated and diffused (merging points form 2 populations)
+        fitness_merged = []
+        for idx, (diff_point, update1_point) in enumerate(zip(population_diffusion_sorted, population_update1)):
+            if fitness_update1[idx] < fitness_diffusion_sorted[idx]:  # update_1 point is better than diffusion
+                self.population[idx] = update1_point
+                fitness_merged.append(fitness_update1[idx])
+            else:
+                self.population[idx] = diff_point  # diffusion point is better than update_1
+                fitness_merged.append(fitness_diffusion_sorted[idx])
+        fitness_merged = np.array(fitness_merged)
+        self.population, fitness_merged = self.simultaneous_fitness_sort(self.population, fitness_merged)
+        ################################################################################################
+        # 2.b)  update the best point and fitness
+        ################################################################################################
+        self.update_best(self.population, fitness_merged)
+        ################################################################################################
+        ## 2.c) ranking after update1 process
+        ################################################################################################
+        # probabilities for points, ranking eqn(15)
+        # pa_sorted = same as before update 1
+        ################################################################################################
+        ################################################################################################
+        ################################################################################################
+        ################################################################################################
+        # 3) update 2 : updating the best points obtained by diffusion process  >> exploration
+        ################################################################################################
+        self.population, fitness_update2 = self.update_2_step(pa_sorted)
+        self.population, fitness_update2 = self.simultaneous_fitness_sort(self.population, fitness_update2)
+        self.fitness_ax.plot([self.generation - 1, self.generation], [self.last_draw, self.best_fit])
+        ################################################################################################
+        ################################################################################################
+        ################################################################################################
+        ################################################################################################
+        # 4) drawing stuff
+        self.last_draw = self.best_fit  # used to connect lines
+        plt_to_img(self.fitness_fig)
+        if self.draw_3d:
+            # for 3d drawing for dim = 2 problems
+            draw_3d_imgs = self.demo_3d(self.population, fitness_update2)
+            for img in draw_3d_imgs:
+                cv2.imwrite(os.path.join(PATH_IMGS_3D, "anim-{}.png".format(self.anim_index)), img)
+                self.anim_index += 1
+        self.generation += 1
+        plt.pause(self.refresh_inter)
+        if self.iter_callback is not None:
+            self.iter_callback(self.best_point, self.best_fit, self.generation)
 
     def demo_3d(self, population, fitness):
         """
@@ -411,7 +412,8 @@ class StochasticFractalSearch():
                 while self.pause_mode:
                     plt.pause(self.refresh_inter)
                 plt.pause(self.refresh_inter)
-
+            self.collection_3d._offsets3d = X_p, Y_p, Z_p
+            plt.pause(self.refresh_inter)
         self.last_XYZ = (X_p, Y_p, Z_p)
         return plt_to_img_results
 
@@ -442,7 +444,7 @@ if __name__ == "__main__":
     # upper = problem.max_search_range
     # print("actual optimal value", problem.get_global_optimum_solution())
     # print("actual optimal point", problem.optimal_solution)
-    # sfs = StochasticFractalSearch(lower, upper, 2, 50, .5, problem.get_func_val, 400, demo_3d=False)
+    # sfs = StochasticFractalSearch(lower, upper, 10, 50, .5, problem.get_func_val, 100, demo_3d=False)
     # sfs.optimize()
     # print("algorithm optimal value", sfs.best_fit)
     # print("algorithm optimal point", sfs.best_point)
