@@ -65,6 +65,12 @@ class Individual:
     def fitness(self):
         return self.__fitness
 
+    def __hash__(self):
+        return hash(self.__fitness)
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__fitness == other.fitness
+
 
 class StochasticFractalSearch:
     """
@@ -73,7 +79,7 @@ class StochasticFractalSearch:
     *************************************************************************
     """
 
-    def __init__(self, lower, upper, maximum_diffusion, population_size, walk, fitness_callback, max_generation, bound_clipping=True, demo_3d=False, plot_step=.5, refresh_inter=.01, iter_callback=None):
+    def __init__(self, lower, upper, maximum_diffusion, population_size, walk, fitness_callback, max_generation, bound_clipping=True, demo_3d=False, plot_step=.5, refresh_inter=.01, iter_callback=None, perturb=.2):
         """
         a class for SFS algorithm
         :param bound_clipping: true to clip out of bound values | false to use random values as in the original algorithm on matlab
@@ -122,6 +128,7 @@ class StochasticFractalSearch:
         self.walk = walk
         self.bound_clipping = bound_clipping
         self.population = [self.new_individual() for _ in range(population_size)]
+        self.perturb = perturb
         ##############################################################
         # initializing the best point
         # sort the population based on the fitness
@@ -173,7 +180,7 @@ class StochasticFractalSearch:
         sorting individuals list on fitness
         :return: sorted individuals
         """
-        return sorted(individuals, key=lambda item: item.fitness)
+        return sorted(set(individuals), key=lambda item: item.fitness)
 
     def update_best(self, population_sorted):
         """
@@ -196,7 +203,7 @@ class StochasticFractalSearch:
         new_points = [source]
         for i in range(num_diffusion):
             # consider which walks should be selected
-            sigma = (np.log(self.generation) / self.generation) * (abs((source.state - self.best_point.state)))  # eqn (13)
+            sigma = (np.log(self.generation + 1) / self.generation) * (abs((source.state - self.best_point.state)))  # eqn (13)
             if rand() < self.walk:
                 # simple walk, gaussian around best
                 generated_point = normal(loc=self.best_point.state, scale=sigma, size=(dimension,)) + (rand() * self.best_point.state - rand() * source.state)  # eqn (11),a mistake in the code replacing uniform and normal distributions
@@ -205,11 +212,7 @@ class StochasticFractalSearch:
                 generated_point = normal(loc=source.state, scale=sigma, size=(dimension,))  # eqn (12)
             new_points.append(self.new_individual(generated_point))
 
-        new_points_sorted = self.sort_individuals(new_points)
-
-        # the newly created pointed is the best one (minimization = minimum fitness)
-        create_point = new_points_sorted[0]
-        return create_point
+        return new_points
 
     def update_2_step(self, pa_sorted):
         """
@@ -217,7 +220,9 @@ class StochasticFractalSearch:
         :param pa_sorted: probabilities sorted for each point (assuming population is sorted)
         :return: a tuple( updated population based on the randomized step, update 2 fitness as well)
         """
-        for point_idx in range(self.population_size):
+        population_update2 = []
+        perturb_idx = int(self.perturb * len(self.population))
+        for point_idx in range(perturb_idx):
             if rand() > pa_sorted[point_idx]:
                 r1 = randrange(self.population_size)
                 r2 = randrange(self.population_size)
@@ -230,10 +235,9 @@ class StochasticFractalSearch:
                     replace_point = self.population[point_idx].state - rand() * (self.population[r2].state - self.population[r1].state)  # eqn (18)
                 replace_point = self.new_individual(replace_point)
 
-                if replace_point.fitness < self.population[point_idx].fitness:
-                    self.population[point_idx] = replace_point
+                population_update2.append(replace_point)
 
-        return self.population
+        return population_update2
 
     def update_1_step(self, pa_sorted):
         """
@@ -243,19 +247,24 @@ class StochasticFractalSearch:
         rand_vec1 = np.random.permutation(self.population_size)
         rand_vec2 = np.random.permutation(self.population_size)
 
-        population_update1 = copy.deepcopy(self.population)
-        # population_update1 = self.population.copy()
-        for point_idx in range(self.population_size):
+        population = copy.deepcopy(self.population)
+        population_update1 = []
+        # population = self.population.copy()
+        perturb_idx = int(self.perturb * len(self.population))
+        for point_idx in range(perturb_idx):
+            change = False
             for component_idx in range(self.dim):
                 if rand() > pa_sorted[point_idx]:
+                    change = True
                     source_point = self.population[point_idx].state
-                    target_point = population_update1[point_idx].state
+                    target_point = population[point_idx].state
                     rand_point1 = self.population[rand_vec1[point_idx]].state
                     rand_point2 = self.population[rand_vec2[point_idx]].state
                     target_point[component_idx] = rand_point1[component_idx] - rand() * (rand_point2[component_idx] - source_point[component_idx])  # eqn(16)
                 # else :# leave unchanged
-
-            population_update1[point_idx].update()
+            if change:
+                population[point_idx].update()
+                population_update1.append(population[point_idx])
         return population_update1
 
     def diffusion_step(self):
@@ -263,11 +272,12 @@ class StochasticFractalSearch:
         for each point in the population apply the diffusion as described in the paper
         :return:  a tuple(diffused population based on the diffusion_process step, fitness for the new diffused population)
         """
+        perturb_idx = int(self.perturb * len(self.population))
         population_diffusion = []
-        for candidate in self.population:
+        for candidate in self.population[:perturb_idx]:
             # creating new points based on diffusion process >> exploitation
-            new_point = self.diffusion_process(candidate)
-            population_diffusion.append(new_point)
+            new_points = self.diffusion_process(candidate)
+            population_diffusion.extend(new_points)
         return population_diffusion
 
     def optimize(self):
@@ -288,10 +298,11 @@ class StochasticFractalSearch:
         population_diffusion_sorted = self.sort_individuals(population_diffusion)
         # clean up and make sure they aren't used again (might be a source for confusion)
         del population_diffusion
+        #self.population = population_diffusion_sorted[:self.population_size]  # clip
         ################################################################################################
         # 1.b) update the best point and fitness
         ################################################################################################
-        self.update_best(population_diffusion_sorted)
+        self.update_best(self.population)
         ################################################################################################
         # 1.c) ranking after diffusion process
         ################################################################################################
@@ -303,16 +314,15 @@ class StochasticFractalSearch:
         ################################################################################################
         # 2) update 1 : updating the best points obtained by diffusion process  >> exploration
         ################################################################################################
-        self.population = population_diffusion_sorted
+
         population_update1 = self.update_1_step(pa_sorted)  # population is sorted
         # keep the best of both the updated and diffused (merging points form 2 populations)
-        for idx, (diff_point, update1_point) in enumerate(zip(population_diffusion_sorted, population_update1)):
-            if update1_point.fitness < diff_point.fitness:  # update_1 point is better than diffusion
-                self.population[idx] = update1_point
-            else:
-                self.population[idx] = diff_point  # diffusion point is better than update_1
-
+        self.population.extend(population_update1)
         self.population = self.sort_individuals(self.population)
+
+        # self.population = population_diffusion_sorted[:self.population_size] # clip
+        # if len(set(self.population)) != self.population_size:
+        #     print()
         ################################################################################################
         # 2.b)  update the best point and fitness
         ################################################################################################
@@ -328,8 +338,12 @@ class StochasticFractalSearch:
         ################################################################################################
         # 3) update 2 : updating the best points obtained by diffusion process  >> exploration
         ################################################################################################
-        self.population = self.update_2_step(pa_sorted)
+        population_update2 = self.update_2_step(pa_sorted)
+        self.population.extend(population_update2)
         self.population = self.sort_individuals(self.population)
+        self.population = self.population[:self.population_size]
+        # if len(set(self.population)) != self.population_size:
+        #     print()
         ################################################################################################
         ################################################################################################
         ################################################################################################

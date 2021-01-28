@@ -392,11 +392,11 @@ class StochasticFractalSearch():
                     z.append(self.fitness_callback(np.array(tmp)))
                 Z.append(z)
             Z = np.array(Z)
-            self.demo_3d_ax.plot_surface(X, Y, Z, cmap=cm.coolwarm, alpha=.7,
+            self.demo_3d_ax.plot_surface(X, Y, Z, cmap=cm.hsv, alpha=.4,
                                          linewidth=.1, antialiased=True)
 
             # self.demo_ax.plot_wireframe(X, Y, Z)
-            self.collection_3d = self.demo_3d_ax.scatter(X_p, Y_p, Z_p, marker='o', linewidth=5, color='red')
+            self.collection_3d = self.demo_3d_ax.scatter(X_p, Y_p, Z_p, marker='o', linewidth=5, color='black')
         else:
             X_last, Y_last, Z_last = self.last_XYZ
             X_diff, Y_diff, Z_diff = X_p - X_last, Y_p - Y_last, Z_p - Z_last

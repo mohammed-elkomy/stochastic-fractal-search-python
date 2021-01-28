@@ -1,16 +1,10 @@
-import time
 from functools import partial
 
+import cv2
 import imutils
 import numpy as np
-import cv2
 
-from my_sfs import StochasticFractalSearch
-from PIL import Image, ImageDraw
-import cv2
-import glfw
-import numpy as np
-from OpenGL.GL import *
+from original_sfs import StochasticFractalSearch
 
 TARGET_INTERNAL_SHAPE = 75
 
@@ -18,7 +12,7 @@ COLOR_MAX = 255
 
 RGBA = 4  # color space used
 DIMENSIONS = 2  # working in 2d images
-NUM_OF_POLY = 1000  # number of polygons, for example if POINTS_PER_POLYGON = 3, we will have 30 triangles
+NUM_OF_POLY = 125  # number of polygons, for example if POINTS_PER_POLYGON = 3, we will have 30 triangles
 POINTS_PER_POLYGON = 3  # a triangle
 
 COLORS_TENSOR_SHAPE = (NUM_OF_POLY, RGBA)
@@ -26,7 +20,7 @@ POLYGONS_TENSOR_SHAPE = (NUM_OF_POLY, POINTS_PER_POLYGON, DIMENSIONS)
 
 # load the image
 REFERENCE_IMG = cv2.imread("imgs/liza.jpg")
-REFERENCE_IMG = REFERENCE_IMG[80:80+300, 180:+180+300]
+REFERENCE_IMG = REFERENCE_IMG[80:80 + 300, 180:+180 + 300]
 INTERNAL_IMG = imutils.resize(REFERENCE_IMG, TARGET_INTERNAL_SHAPE, TARGET_INTERNAL_SHAPE).astype(np.float)
 REF_SHAPE = REFERENCE_IMG.shape
 REF_HEIGHT, REF_WIDTH = REF_SHAPE[0], REF_SHAPE[1]
@@ -68,7 +62,15 @@ def draw_image_from_polygons(polygons, colors, show=False, shape=INTER_SHAPE):
 
 
 def generation_callback(best_point, generation):
+    print(generation, ":", best_point.fitness)
     polygons, colors = decode(best_point.state)
+    drawer = partial(draw_image_from_polygons, show=True, shape=REF_SHAPE)
+    drawer(polygons, colors)
+
+
+def generation_callback2(best_point, fitness, generation):
+    print(generation, ":", fitness)
+    polygons, colors = decode(best_point)
     drawer = partial(draw_image_from_polygons, show=True, shape=REF_SHAPE)
     drawer(polygons, colors)
 
@@ -114,6 +116,6 @@ if __name__ == "__main__":
     upper_colors = np.ones(shape=COLORS_TENSOR_SHAPE) * COLOR_MAX
     upper = encode(upper_polygons, upper_colors)
 
-    sfs = StochasticFractalSearch(lower, upper, 4, 50, 0, custom_fitness, 5000, iter_callback=generation_callback)
+    sfs = StochasticFractalSearch(lower, upper, 3, 100, 0, custom_fitness, 5000, iter_callback=generation_callback2)
     sfs.optimize()
     cv2.waitKey()
