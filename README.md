@@ -5,9 +5,10 @@ article, named [Stochastic Fractal Search: A powerful metaheuristic algorithm](h
 Fractals are impressive recursive structures and a major interest of computer graphics literature:
 
 ## Sample Fractals
-![Mandelbrot Set](https://www.mathworks.com/matlabcentral/mlc-downloads/downloads/submissions/37813/versions/1/screenshot.gif)
-
-![Sierpinski triangle](https://i.pinimg.com/originals/12/27/1a/12271a8f5a1157cd194cec0e2e5d0757.gif)
+<p align="center">
+<img src="https://i.pinimg.com/originals/12/27/1a/12271a8f5a1157cd194cec0e2e5d0757.gif" alt="Sierpinski triangle" />
+<img src="https://www.mathworks.com/matlabcentral/mlc-downloads/downloads/submissions/37813/versions/1/screenshot.gif" alt="Mandelbrot Set" />
+</p>
 
 ##Project Structure
 ```
@@ -21,5 +22,7 @@ Fractals are impressive recursive structures and a major interest of computer gr
 ```
 The algorithm implemented *sfs.py* 
 
-![Demo Optimization](https://i.giphy.com/media/Iok6UIB10yEKchtzEW/source.gif)
 
+<p align="center">
+  <img src="https://media.giphy.com/media/Iok6UIB10yEKchtzEW/source.gif"  alt="demo" />
+</p>
