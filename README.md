@@ -10,7 +10,7 @@ Fractals are impressive recursive structures and a major interest of computer gr
 <img src="https://www.mathworks.com/matlabcentral/mlc-downloads/downloads/submissions/37813/versions/1/screenshot.gif" alt="Mandelbrot Set" />
 </p>
 
-##Project Structure
+## Project Structure
 ```
 .
 ├── LICENSE 
@@ -20,8 +20,8 @@ Fractals are impressive recursive structures and a major interest of computer gr
     ├── random walk.py (random gaussaing walk demo)
     └── self-avoiding-walk.py (self avoiding gaussaing walk demo)
 ```
-The algorithm implemented *sfs.py* 
-
+The algorithm is implemented in *sfs.py*, where benchmark functions could be tested effortlessly using [opteval](https://github.com/keit0222/optimization-evaluation) package
+You may also view some random walk demos under walks directory.
 
 <p align="center">
   <img src="https://media.giphy.com/media/Iok6UIB10yEKchtzEW/giphy.gif"  alt="demo" />
