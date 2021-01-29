@@ -2,7 +2,7 @@
 Stochastic Fractal Search (SFS) is a meta-heuristic optimization algorithm inspired from the concept of fractals, SFS was originally created by Dr Hamid Salimi in his 
 article, named [Stochastic Fractal Search: A powerful metaheuristic algorithm](https://www.sciencedirect.com/science/article/abs/pii/S0950705114002822).
 
-My [medium blog post](https://mohammed-a-elkomy.medium.com/stochastic-fratral-search-algorithm-a54ea41f0858) behind this repo
+Also check my [medium blog post](https://mohammed-a-elkomy.medium.com/stochastic-fratral-search-algorithm-a54ea41f0858) behind this repo.
 
 Fractals are impressive recursive structures and a major interest of computer graphics.
 
