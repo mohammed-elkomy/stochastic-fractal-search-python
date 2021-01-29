@@ -26,3 +26,4 @@ The algorithm implemented *sfs.py*
 <p align="center">
   <img src="https://media.giphy.com/media/Iok6UIB10yEKchtzEW/source.gif"  alt="demo" />
 </p>
+<iframe src="https://giphy.com/embed/Iok6UIB10yEKchtzEW" width="480" height="360" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/Iok6UIB10yEKchtzEW">via GIPHY</a></p>
