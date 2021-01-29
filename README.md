@@ -31,5 +31,5 @@ Fractals are impressive recursive structures and a major interest of computer gr
 ## Original Matlab implementation
 The original creator of SFS has published the Matlab code of the algorithm via [MATLAB Central File Exchange](https://www.mathworks.com/matlabcentral/fileexchange/47565-stochastic-fractal-search-sfs).
 
-## Extra
+## gifski
 I used gifski open-source tool for generating high-quality gifs 🎊🎊
