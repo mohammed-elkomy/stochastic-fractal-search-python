@@ -27,4 +27,5 @@ The algorithm implemented *sfs.py*
   <img src="https://i.giphy.com/media/Iok6UIB10yEKchtzEW/source.gif"  alt="demo" />
 </p>
 
-![Alt Text](https://media.giphy.com/media/vFKqnCdLPNOKc/giphy.gif)
+![Alt Text](https://media.giphy.com/media/Iok6UIB10yEKchtzEW/source.gif)
+            
