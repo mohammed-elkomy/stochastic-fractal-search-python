@@ -21,5 +21,5 @@ Fractals are impressive recursive structures and a major interest of computer gr
 ```
 The algorithm implemented *sfs.py* 
 
-![Demo Optimization](https://media.giphy.com/media/Iok6UIB10yEKchtzEW/source.gif)
+![Demo Optimization](https://i.giphy.com/media/Iok6UIB10yEKchtzEW/source.gif)
 
