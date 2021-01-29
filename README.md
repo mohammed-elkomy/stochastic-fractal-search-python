@@ -20,10 +20,16 @@ Fractals are impressive recursive structures and a major interest of computer gr
     ├── random walk.py (random gaussaing walk demo)
     └── self-avoiding-walk.py (self avoiding gaussaing walk demo)
 ```
-The algorithm is implemented in *sfs.py*, where benchmark functions could be tested effortlessly using [opteval](https://github.com/keit0222/optimization-evaluation) package
-You may also view some random walk demos under walks directory.
+## Features
+1. The algorithm is implemented in *sfs.py*, where benchmark functions could be tested effortlessly using [opteval](https://github.com/keit0222/optimization-evaluation) package
+2. You may also view some random walk demos under walks directory.
 
 <p align="center">
   <img src="https://media.giphy.com/media/Iok6UIB10yEKchtzEW/giphy.gif"  alt="demo" />
 </p>
 
+## Original Matlab implementation
+The original creator of SFS has published the Matlab code of the algorithm via [MATLAB Central File Exchange](https://www.mathworks.com/matlabcentral/fileexchange/47565-stochastic-fractal-search-sfs).
+
+## Extra
+I used gifski open-source tool for generating high-quality gifs 🎊🎊
