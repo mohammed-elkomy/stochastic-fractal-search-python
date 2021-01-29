@@ -1,5 +1,5 @@
 # Stochastic Fractal Search In Python
-Stochastic Fractal Search (SFS) is a meta-heuristic optimization algorithm inspired from the concept of fractals, was originally created by Dr Hamid Salimi in his 
+Stochastic Fractal Search (SFS) is a meta-heuristic optimization algorithm inspired from the concept of fractals, SFS was originally created by Dr Hamid Salimi in his 
 article, named [Stochastic Fractal Search: A powerful metaheuristic algorithm](https://www.sciencedirect.com/science/article/abs/pii/S0950705114002822)
 
 Fractals are impressive recursive structures and a major interest of computer graphics literature:
